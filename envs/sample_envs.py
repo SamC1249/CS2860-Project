@@ -106,6 +106,22 @@ def episode_done(terminated: Any, truncated: Any) -> bool:
     return bool(terminated) or bool(truncated)
 
 
+def safe_close_env(env: gym.Env | None) -> None:
+    """
+    Call ``env.close()`` and ignore teardown failures.
+
+    rware uses Pyglet; on some macOS / Pyglet builds, closing the window raises
+    (e.g. ``AttributeError`` in ``CocoaAlternateEventLoop``). The GL context is
+    already gone, so there is nothing useful to do except exit without a traceback.
+    """
+    if env is None:
+        return
+    try:
+        env.close()
+    except Exception:
+        pass
+
+
 def run_random_rollout(
     env: gym.Env,
     *,
@@ -130,7 +146,7 @@ def run_random_rollout(
                     break
                 env.reset()
     finally:
-        env.close()
+        safe_close_env(env)
 
 
 def main() -> None:
